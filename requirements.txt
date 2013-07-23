@@ -5,3 +5,4 @@ eventlet>=0.9.12
 argparse
 iso8601>=0.1.4
 oslo.config
+https://github.com/istalker2/puka/releases/download/0.0.7a/puka-0.0.7a.tar.gz
