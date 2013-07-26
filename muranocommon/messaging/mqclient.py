@@ -16,17 +16,27 @@
 from eventlet import patcher
 puka = patcher.import_patched('puka')
 import anyjson
+from subscription import Subscription
 
 
 class MqClient(object):
-    def __init__(self, login, password, host, port, virtual_host):
-        self._client = puka.Client('amqp://{0}:{1}@{2}:{3}/{4}'.format(
+    def __init__(self, login, password, host, port, virtual_host,
+                 ssl=False, ca_certs=None):
+        scheme = 'amqp:' if not ssl else 'amqps:'
+
+        ssl_parameters = None
+        if ssl:
+            ssl_parameters = puka.SslConnectionParameters()
+            ssl_parameters.ca_certs = ca_certs
+
+        self._client = puka.Client('{0}//{1}:{2}@{3}:{4}/{5}'.format(
+            scheme,
             login,
             password,
             host,
             port,
             virtual_host
-        ))
+        ), ssl_parameters=ssl_parameters)
         self._connected = False
 
     def __enter__(self):
@@ -74,66 +84,8 @@ class MqClient(object):
             headers=headers)
         self._client.wait(promise, timeout=timeout)
 
-    def open(self, queue):
+    def open(self, queue, prefetch_count=1):
         if not self._connected:
             raise RuntimeError('Not connected to RabbitMQ')
 
-        return Subscription(self._client, queue)
-
-
-class Subscription(object):
-    def __init__(self, client, queue):
-        self._client = client
-        self._queue = queue
-        self._promise = None
-        self._lastMessage = None
-
-    def __enter__(self):
-        self._promise = self._client.basic_consume(
-            queue=self._queue,
-            prefetch_count=1)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._ack_last()
-        promise = self._client.basic_cancel(self._promise)
-        self._client.wait(promise)
-        return False
-
-    def _ack_last(self):
-        if self._lastMessage:
-            self._client.basic_ack(self._lastMessage)
-            self._lastMessage = None
-
-    def get_message(self, timeout=None):
-        if not self._promise:
-            raise RuntimeError(
-                "Subscription object must be used within 'with' block")
-        self._ack_last()
-        self._lastMessage = self._client.wait(self._promise, timeout=timeout)
-        msg = Message()
-        msg.body = anyjson.loads(self._lastMessage['body'])
-        msg.id = self._lastMessage['headers'].get('message_id')
-        return msg
-
-
-class Message(object):
-    def __init__(self):
-        self._body = {}
-        self._id = ''
-
-    @property
-    def body(self):
-        return self._body
-
-    @body.setter
-    def body(self, value):
-        self._body = value
-
-    @property
-    def id(self):
-        return self._id
-
-    @id.setter
-    def id(self, value):
-        self._id = value or ''
+        return Subscription(self._client, queue, prefetch_count)

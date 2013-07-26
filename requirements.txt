@@ -2,7 +2,4 @@ d2to1>=0.2.10,<0.3
 pbr>=0.5,<0.6
 anyjson
 eventlet>=0.9.12
-argparse
-iso8601>=0.1.4
-oslo.config
-https://github.com/istalker2/puka/releases/download/0.0.7a/puka-0.0.7a.tar.gz#egg=puka-0.0.7a
+https://github.com/istalker2/puka/releases/download/1.0.7b/puka-1.0.7b.tar.gz#egg=puka-1.0.7b
