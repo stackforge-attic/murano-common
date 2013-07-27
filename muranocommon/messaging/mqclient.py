@@ -50,12 +50,13 @@ class MqClient(object):
     def connect(self):
         if not self._connected:
             promise = self._client.connect()
-            self._client.wait(promise, timeout=10000)
-            self._connected = True
+            if self._client.wait(promise, timeout=10) is not None:
+                self._connected = True
 
     def close(self):
         if self._connected:
-            self._client.close()
+            promise = self._client.close()
+            self._client.wait(promise)
             self._connected = False
 
     def declare(self, queue, exchange=None):

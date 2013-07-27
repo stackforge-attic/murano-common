@@ -39,5 +39,7 @@ class Subscription(object):
             raise RuntimeError(
                 "Subscription object must be used within 'with' block")
         msg_handle = self._client.wait(self._promise, timeout=timeout)
+        if msg_handle is None:
+            return None
         msg = Message(self._client, msg_handle)
         return msg

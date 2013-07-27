@@ -2,4 +2,4 @@ d2to1>=0.2.10,<0.3
 pbr>=0.5,<0.6
 anyjson
 eventlet>=0.9.12
-https://github.com/istalker2/puka/releases/download/1.0.7b/puka-1.0.7b.tar.gz#egg=puka-1.0.7b
+https://github.com/istalker2/puka/releases/download/1.0.7c/puka-1.0.7c.tar.gz#egg=puka-1.0.7c
