@@ -32,7 +32,6 @@ class Message(object):
             self.body = None
             log.exception(e)
 
-
     @property
     def body(self):
         return self._body
