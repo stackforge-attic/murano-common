@@ -1,4 +1,5 @@
-# Copyright (c) 2013 Mirantis Inc.
+#!/usr/bin/env python
+# Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +16,6 @@
 
 import setuptools
 
-
 setuptools.setup(
-    setup_requires=[
-        'd2to1>=0.2.10,<0.3',
-        'pbr>=0.5,<0.6'
-    ],
-    d2to1=True
-)
+    setup_requires=['pbr'],
+    pbr=True)
