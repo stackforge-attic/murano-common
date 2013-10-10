@@ -1,5 +1,5 @@
 pbr>=0.5.21,<1.0
 anyjson>=0.3.3
 eventlet>=0.13.0
-https://github.com/istalker2/puka/releases/download/1.0.7c/puka-1.0.7c.tar.gz#egg=puka-1.0.7c
 
+https://github.com/istalker2/puka/releases/download/1.0.7d/puka-1.0.7d.tar.gz#egg=puka-1.0.7d

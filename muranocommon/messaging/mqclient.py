@@ -90,7 +90,7 @@ class MqClient(object):
         if not self._connected:
             raise RuntimeError('Not connected to RabbitMQ')
 
-        headers = {'message_id': message.id}
+        headers = {'message_id': str(message.id)}
 
         promise = self._client.basic_publish(
             exchange=str(exchange),
