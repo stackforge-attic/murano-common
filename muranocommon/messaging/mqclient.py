@@ -60,7 +60,9 @@ class MqClient(object):
             self._connected = False
 
     def declare(self, queue, exchange=None):
-        promise = self._client.queue_declare(str(queue), durable=True)
+        promise = self._client.queue_declare(
+            str(queue), durable=True, arguments={'x-ha-policy': 'all'}
+        )
         self._client.wait(promise)
 
         if exchange:
