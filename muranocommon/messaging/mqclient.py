@@ -59,8 +59,22 @@ class MqClient(object):
             self._client.wait(promise)
             self._connected = False
 
-    def declare(self, queue, exchange=None):
-        promise = self._client.queue_declare(str(queue), durable=True)
+    def declare(self, queue, exchange=None, enable_ha=False, ttl=0):
+        queue_args = {}
+        if enable_ha is True:
+            # To use mirrored queues feature in RabbitMQ 2.x
+            # we need to declare this policy on the queue itself.
+            #
+            # Warning: this option has no effect on RabbitMQ 3.X,
+            # to enable mirrored queues feature in RabbitMQ 3.X, please
+            # configure RabbitMQ.
+            queue_args['x-ha-policy'] = 'all'
+        if ttl > 0:
+            queue_args['x-expires'] = str(ttl)
+
+        promise = self._client.queue_declare(
+            str(queue), durable=True, arguments=queue_args
+        )
         self._client.wait(promise)
 
         if exchange:
