@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Stan Lagun <slagun@mirantis.com>
+Code-Review+2: Stan Lagun <slagun@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 22 Nov 2013 13:55:10 +0000
+Reviewed-on: https://review.openstack.org/57923
+Project: stackforge/murano-common
+Branch: refs/heads/master
