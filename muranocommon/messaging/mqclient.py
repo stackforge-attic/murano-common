@@ -70,7 +70,7 @@ class MqClient(object):
             # configure RabbitMQ.
             queue_args['x-ha-policy'] = 'all'
         if ttl > 0:
-            queue_args['x-expires'] = str(ttl)
+            queue_args['x-expires'] = ttl
 
         promise = self._client.queue_declare(
             str(queue), durable=True, arguments=queue_args
