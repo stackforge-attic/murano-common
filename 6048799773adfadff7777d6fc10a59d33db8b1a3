@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Approved+1: Timur Nurlygayanov <tnurlygayanov@mirantis.com>
+Code-Review+2: Timur Nurlygayanov <tnurlygayanov@mirantis.com>
+Code-Review+2: Ekaterina Fedorova <efedorova@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 10 Jan 2014 15:51:38 +0000
+Reviewed-on: https://review.openstack.org/65923
+Project: stackforge/murano-common
+Branch: refs/heads/release-0.4
