@@ -13,30 +13,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from eventlet import patcher
-puka = patcher.import_patched('puka')
 import anyjson
+import logging
+import ssl as ssl_module
+
+from eventlet import patcher
+kombu = patcher.import_patched('kombu')
 from subscription import Subscription
+
+
+log = logging.getLogger("murano-common.messaging")
 
 
 class MqClient(object):
     def __init__(self, login, password, host, port, virtual_host,
                  ssl=False, ca_certs=None):
-        scheme = 'amqp:' if not ssl else 'amqps:'
+        ssl_params = None
 
-        ssl_parameters = None
-        if ssl:
-            ssl_parameters = puka.SslConnectionParameters()
-            ssl_parameters.ca_certs = ca_certs
+        if ssl is True:
+            ssl_params = {
+                'ca_certs': ca_certs,
+                'cert_reqs': ssl_module.CERT_REQUIRED
+            }
 
-        self._client = puka.Client('{0}//{1}:{2}@{3}:{4}/{5}'.format(
-            scheme,
-            login,
-            password,
-            host,
-            port,
-            virtual_host
-        ), ssl_parameters=ssl_parameters)
+        self._connection = kombu.Connection(
+            'amqp://{0}:{1}@{2}:{3}/{4}'.format(
+                login,
+                password,
+                host,
+                port,
+                virtual_host
+            ), ssl=ssl_params
+        )
+        self._channel = None
         self._connected = False
 
     def __enter__(self):
@@ -48,19 +57,19 @@ class MqClient(object):
         return False
 
     def connect(self):
-        if not self._connected:
-            promise = self._client.connect()
-            if self._client.wait(promise, timeout=10) is not None:
-                self._connected = True
+        self._connection.connect()
+        self._channel = self._connection.channel()
+        self._connected = True
 
     def close(self):
-        if self._connected:
-            promise = self._client.close()
-            self._client.wait(promise)
-            self._connected = False
+        self._connection.close()
+        self._connected = False
 
-    def declare(self, queue, exchange=None, enable_ha=False, ttl=0):
-        queue_args = {}
+    def declare(self, queue, exchange='', enable_ha=False, ttl=0):
+        if not self._connected:
+            raise RuntimeError('Not connected to RabbitMQ')
+
+        queue_arguments = {}
         if enable_ha is True:
             # To use mirrored queues feature in RabbitMQ 2.x
             # we need to declare this policy on the queue itself.
@@ -68,39 +77,35 @@ class MqClient(object):
             # Warning: this option has no effect on RabbitMQ 3.X,
             # to enable mirrored queues feature in RabbitMQ 3.X, please
             # configure RabbitMQ.
-            queue_args['x-ha-policy'] = 'all'
+            queue_arguments['x-ha-policy'] = 'all'
         if ttl > 0:
-            queue_args['x-expires'] = ttl
+            queue_arguments['x-expires'] = ttl
 
-        promise = self._client.queue_declare(
-            str(queue), durable=True, arguments=queue_args
-        )
-        self._client.wait(promise)
-
-        if exchange:
-            promise = self._client.exchange_declare(
-                str(exchange),
-                durable=True)
-            self._client.wait(promise)
-            promise = self._client.queue_bind(
-                str(queue), str(exchange), routing_key=str(queue))
-            self._client.wait(promise)
+        exchange = kombu.Exchange(exchange, type='direct', durable=True)
+        queue = kombu.Queue(queue, exchange, queue, durable=True,
+                            queue_arguments=queue_arguments)
+        bound_queue = queue(self._connection)
+        bound_queue.declare()
 
     def send(self, message, key, exchange='', timeout=None):
         if not self._connected:
             raise RuntimeError('Not connected to RabbitMQ')
 
+        if timeout is not None:
+            log.warn('Option "timeout" for method "send" is deprecated')
+
         headers = {'message_id': str(message.id)}
 
-        promise = self._client.basic_publish(
+        producer = kombu.Producer(self._connection)
+        producer.publish(
             exchange=str(exchange),
             routing_key=str(key),
             body=anyjson.dumps(message.body),
-            headers=headers)
-        self._client.wait(promise, timeout=timeout)
+            headers=headers
+        )
 
     def open(self, queue, prefetch_count=1):
         if not self._connected:
             raise RuntimeError('Not connected to RabbitMQ')
 
-        return Subscription(self._client, queue, prefetch_count)
+        return Subscription(self._connection, queue, prefetch_count)
