@@ -13,33 +13,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from message import Message
+import collections
+import socket
+
+from eventlet import patcher
+kombu = patcher.import_patched('kombu')
+five = patcher.import_patched('kombu.five')
+from . import message
 
 
 class Subscription(object):
-    def __init__(self, client, queue, prefetch_count=1):
-        self._client = client
-        self._queue = queue
-        self._promise = None
-        self._prefetch_count = prefetch_count
+    def __init__(self, connection, queue, prefetch_count=1):
+        self._buffer = collections.deque()
+        self._connection = connection
+        self._queue = kombu.Queue(name=queue, exchange=None)
+        self._consumer = kombu.Consumer(self._connection, auto_declare=False)
+        self._consumer.register_callback(self._receive)
+        self._consumer.qos(prefetch_count=prefetch_count)
 
     def __enter__(self):
-        self._promise = self._client.basic_consume(
-            queue=self._queue,
-            prefetch_count=self._prefetch_count)
+        self._consumer.add_queue(self._queue)
+        self._consumer.consume()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        promise = self._client.basic_cancel(self._promise)
-        self._client.wait(promise)
+        if self._consumer is not None:
+            self._consumer.cancel()
         return False
 
     def get_message(self, timeout=None):
-        if not self._promise:
-            raise RuntimeError(
-                "Subscription object must be used within 'with' block")
-        msg_handle = self._client.wait(self._promise, timeout=timeout)
+        msg_handle = self._get(timeout=timeout)
         if msg_handle is None:
             return None
-        msg = Message(self._client, msg_handle)
-        return msg
+        return message.Message(self._connection, msg_handle)
+
+    def _get(self, timeout=None):
+        elapsed = 0.0
+        remaining = timeout
+        while True:
+            time_start = five.monotonic()
+            if self._buffer:
+                return self._buffer.pop()
+            try:
+                self._connection.drain_events(timeout=timeout and remaining)
+            except socket.timeout:
+                return None
+            elapsed += five.monotonic() - time_start
+            remaining = timeout and timeout - elapsed or None
+
+    def _receive(self, message_data, message):
+        self._buffer.append(message)

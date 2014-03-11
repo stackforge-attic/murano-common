@@ -20,14 +20,16 @@ log = logging.getLogger("murano-common.messaging")
 
 
 class Message(object):
-    def __init__(self, client=None, message_handle=None):
-        self._client = client
+    def __init__(self, connection=None, message_handle=None):
+        self._id = None
+        self._body = None
+        self._connection = connection
         self._message_handle = message_handle
         self.id = None if message_handle is None else \
-            message_handle['headers'].get('message_id')
+            message_handle.headers.get('message_id')
         try:
             self.body = None if message_handle is None else \
-                anyjson.loads(message_handle['body'])
+                anyjson.loads(message_handle.body)
         except ValueError as e:
             self.body = None
             log.exception(e)
@@ -49,4 +51,4 @@ class Message(object):
         self._id = value or ''
 
     def ack(self):
-        self._client.basic_ack(self._message_handle)
+        self._message_handle.ack()
