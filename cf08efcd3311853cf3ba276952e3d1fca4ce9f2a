@@ -1,0 +1,12 @@
+Verified+2: Jenkins
+Code-Review+2: Stan Lagun <slagun@mirantis.com>
+Approved+1: Dmitry Teselkin <dteselkin@mirantis.com>
+Code-Review+1: Ruslan Kamaldinov <rkamaldinov@mirantis.com>
+Approved+1: Timur Sufiev <tsufiev@mirantis.com>
+Code-Review+2: Timur Sufiev <tsufiev@mirantis.com>
+Code-Review+2: Alexander Tivelkov <ativelkov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 13 Mar 2014 08:28:25 +0000
+Reviewed-on: https://review.openstack.org/79639
+Project: stackforge/murano-common
+Branch: refs/heads/master
